@@ -6872,7 +6872,7 @@ skills["Smite"] = {
 		},
 		["skill_buff_grants_attack_and_cast_speed_+%"] = {
 			mod("Speed", "INC", nil, 0, 0, { type = "GlobalEffect", effectType = "Aura" })
-		}
+		},
 	},
 	baseFlags = {
 		attack = true,

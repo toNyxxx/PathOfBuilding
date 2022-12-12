@@ -1,0 +1,72 @@
+diff --git a/runtime-win32.zip b/runtime-win32.zip
+deleted file mode 100644
+index 2fd1fff6..00000000
+Binary files a/runtime-win32.zip and /dev/null differ
+diff --git a/src/Classes/PassiveSpec.lua b/src/Classes/PassiveSpec.lua
+index e34f723d..e4c8cce2 100644
+--- a/src/Classes/PassiveSpec.lua
++++ b/src/Classes/PassiveSpec.lua
+@@ -13,6 +13,18 @@ local m_max = math.max
+ local m_floor = math.floor
+ local b_lshift = bit.lshift
+ 
++function logAlloc(msg, id)
++	local file = io.open( "buildLog.txt", "a" )
++	print(msg .. id)
++	if msg == "a" then
++		file:write("{\n  \"Id\": " .. id .. "\n},\n")
++	else
++		file:write("--- remove " .. id .. "\n")
++	end
++	-- file:write(msg .. id .. "\n")
++	file:close()
++end
++
+ local PassiveSpecClass = newClass("PassiveSpec", "UndoHandler", function(self, build, treeVersion)
+ 	self.UndoHandler()
+ 
+@@ -344,6 +356,16 @@ function PassiveSpecClass:ResetNodes()
+ 	end
+ end
+ 
++function reverse(t)
++  local n = #t
++  local i = 1
++  while i < n do
++    t[i],t[n] = t[n],t[i]
++    i = i + 1
++    n = n - 1
++  end
++end
++
+ -- Allocate the given node, if possible, and all nodes along the path to the node
+ -- An alternate path to the node may be provided, otherwise the default path will be used
+ -- The path must always contain the given node, as will be the case for the default path
+@@ -357,10 +379,19 @@ function PassiveSpecClass:AllocNode(node, altPath)
+ 	if node.dependsOnIntuitiveLeapLike then
+ 		node.alloc = true
+ 		self.allocNodes[node.id] = node
++		logAlloc("a ", pathNode.id)
+ 	else
++		nodeIDs = {}
++		if altPath then
++			reverse(altPath)
++		end
+ 		for _, pathNode in ipairs(altPath or node.path) do
+ 			pathNode.alloc = true
+ 			self.allocNodes[pathNode.id] = pathNode
++			table.insert(nodeIDs, 1, pathNode.id)
++		end
++		for _, id in ipairs(nodeIDs) do
++			logAlloc("a" , id)
+ 		end
+ 	end
+ 
+@@ -384,6 +415,7 @@ function PassiveSpecClass:DeallocNode(node)
+ 	for _, depNode in ipairs(node.depends) do
+ 		depNode.alloc = false
+ 		self.allocNodes[depNode.id] = nil
++		logAlloc("d ", depNode.id)
+ 	end
+ 
+ 	-- Rebuild all paths and dependencies for all allocated nodes
